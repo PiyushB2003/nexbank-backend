@@ -5,6 +5,7 @@ import { ErrorException } from 'src/app/exceptions/nb-responses.exception';
 import { Throttle } from '@nestjs/throttler';
 import { OtpThrottlerGuard } from 'src/app/guards/otp-throttler.guard';
 import { UAParser } from "ua-parser-js";
+import { AuthGuard } from 'src/app/guards/auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -113,6 +114,26 @@ export class AuthController {
     async refreshToken(@Body() postData: RefreshTokenDto) {
         try {
             return this.authService.refreshToken(postData);
+        } catch (error: any) {
+            return ErrorException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                error.message,
+                error.data
+            );
+        }
+    }
+
+    /**
+     * Log out a registered user
+     * 
+     * @param req - The user details to be logged out.
+     * @returns The response object containing the registered refresh token.
+     */
+    @Post("logout")
+    @UseGuards(AuthGuard)
+    async logout(@Request() req: any) {
+        try {
+            return this.authService.logout(req.user);
         } catch (error: any) {
             return ErrorException(
                 HttpStatus.INTERNAL_SERVER_ERROR,

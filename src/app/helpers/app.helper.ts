@@ -4,10 +4,12 @@ import * as CryptoJS from 'crypto-js';
 import * as dotenv from 'dotenv';
 import { nanoid } from 'nanoid';
 import { NBException } from '../exceptions/forbidden-error.exception';
+import * as jwt from 'jsonwebtoken';
 
 dotenv.config();
 
 const encryptMethod = 'aes-256-gcm';
+const jwtAccessTokenKey = process.env.JWT_ACCESS_SECRET || '';
 const secretKey = process.env.ID_ENCRYPTION_SECRET_KEY || '';
 const secretIv = process.env.ID_ENCRYPTION_IV || '';
 const CRYPT_JS_KEY = process.env.CRYPT_JS_KEY || '';
@@ -214,6 +216,15 @@ export class AppHelper {
         } catch (error) {
             console.log('Error generating unique ID:', error);
             return `[Error generating UUID]: ${error.message}`;
+        }
+    }
+
+    verifyAccessToken(token: string): any {
+        try {
+            const payload = jwt.verify(token, jwtAccessTokenKey);
+            return payload;
+        } catch (error) {
+            throw new NBException("invalid_token", HttpStatus.UNAUTHORIZED);
         }
     }
 }

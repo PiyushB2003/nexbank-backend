@@ -275,6 +275,12 @@ export class AuthService implements OnModuleInit {
         return ErrorException(HttpStatus.BAD_REQUEST, 'Missing data');
     }
 
+    /**
+     * Responsible to send data to auth service to refresh token
+     * 
+     * @param postData - Payload containing refresh token
+     * @returns - Success or Failure response
+     */
     async refreshToken(postData: any) {
 
         const { refresh_token } = postData;
@@ -295,6 +301,56 @@ export class AuthService implements OnModuleInit {
             const metadata: any = createGrpcMetadata();
             metadata.set('operation', 'auth');
             metadata.set('action', 'refresh-token');
+            metadata.set('service', 'nexbank-backend');
+
+            // SEND DATA TO AUTH MICROSERVICE
+            const response = await firstValueFrom(
+                this.grpcService.requestSendAuthData(encriptData, metadata),
+            );
+
+            const data = this.AppHelper.decryptString(response.authresponse)
+
+            if (!NB.isEmpty(data)) {
+                return ErrorException(
+                    HttpStatus.BAD_REQUEST,
+                    'Missing response'
+                );
+            }
+
+            if (!data.status) {
+                return ErrorException(
+                    data.code || HttpStatus.BAD_REQUEST,
+                    data.message
+                );
+            }
+
+            return SuccessResponse(data.code, data.message, data.data);
+        }
+
+        // RETURN FAILURE RESPONSE
+        return ErrorException(HttpStatus.BAD_REQUEST, 'Missing data');
+    }
+
+    /**
+     * Responsible to send data to auth service to logout
+     * 
+     * @param user - Payload containing user details
+     * @returns - Success or Failure response
+     */
+    async logout(user: any) {
+
+        if (NB.isEmpty(user)) {
+
+            const encriptData = {
+                authdata: [
+                    this.AppHelper.encryptString(JSON.stringify(user))
+                ],
+            };
+
+            // CREATE GRPC METADATA
+            const metadata: any = createGrpcMetadata();
+            metadata.set('operation', 'auth');
+            metadata.set('action', 'logout');
             metadata.set('service', 'nexbank-backend');
 
             // SEND DATA TO AUTH MICROSERVICE
