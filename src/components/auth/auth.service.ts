@@ -213,6 +213,7 @@ export class AuthService implements OnModuleInit {
      * @returns - Success or Failure response
      */
     async login(deviceData: any, postData: any) {
+
         const { mobile_number, password } = postData;
 
         if (NB.isEmpty(postData) && NB.isEmpty(deviceData)) {
@@ -244,6 +245,56 @@ export class AuthService implements OnModuleInit {
             const metadata: any = createGrpcMetadata();
             metadata.set('operation', 'auth');
             metadata.set('action', 'login');
+            metadata.set('service', 'nexbank-backend');
+
+            // SEND DATA TO AUTH MICROSERVICE
+            const response = await firstValueFrom(
+                this.grpcService.requestSendAuthData(encriptData, metadata),
+            );
+
+            const data = this.AppHelper.decryptString(response.authresponse)
+
+            if (!NB.isEmpty(data)) {
+                return ErrorException(
+                    HttpStatus.BAD_REQUEST,
+                    'Missing response'
+                );
+            }
+
+            if (!data.status) {
+                return ErrorException(
+                    data.code || HttpStatus.BAD_REQUEST,
+                    data.message
+                );
+            }
+
+            return SuccessResponse(data.code, data.message, data.data);
+        }
+
+        // RETURN FAILURE RESPONSE
+        return ErrorException(HttpStatus.BAD_REQUEST, 'Missing data');
+    }
+
+    async refreshToken(postData: any) {
+
+        const { refresh_token } = postData;
+
+        if (NB.isEmpty(postData)) {
+
+            const dataStringify = {
+                refresh_token
+            };
+
+            const encriptData = {
+                authdata: [
+                    this.AppHelper.encryptString(JSON.stringify(dataStringify))
+                ],
+            };
+
+            // CREATE GRPC METADATA
+            const metadata: any = createGrpcMetadata();
+            metadata.set('operation', 'auth');
+            metadata.set('action', 'refresh-token');
             metadata.set('service', 'nexbank-backend');
 
             // SEND DATA TO AUTH MICROSERVICE
