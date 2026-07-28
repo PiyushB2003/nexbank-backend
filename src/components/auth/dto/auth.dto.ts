@@ -80,3 +80,14 @@ export class RefreshTokenDto {
     @IsNotEmpty()
     refresh_token: string;
 }
+
+export class ChangePasswordDto {
+
+    @IsString()
+    @IsNotEmpty()
+    old_password: string;
+
+    @IsString()
+    @IsNotEmpty()
+    new_password: string;
+}

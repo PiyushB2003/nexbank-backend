@@ -380,6 +380,115 @@ export class AuthService implements OnModuleInit {
         // RETURN FAILURE RESPONSE
         return ErrorException(HttpStatus.BAD_REQUEST, 'Missing data');
     }
+
+    /**
+     * Responsible to send data to auth service to get user details
+     * 
+     * @param user - Payload containing user details
+     * @returns - Success or Failure response
+     */
+    async getProfile(user: any) {
+
+        if (NB.isEmpty(user)) {
+
+            const encriptData = {
+                authdata: [
+                    this.AppHelper.encryptString(JSON.stringify(user))
+                ],
+            };
+
+            // CREATE GRPC METADATA
+            const metadata: any = createGrpcMetadata();
+            metadata.set('operation', 'auth');
+            metadata.set('action', 'me');
+            metadata.set('service', 'nexbank-backend');
+
+            // SEND DATA TO AUTH MICROSERVICE
+            const response = await firstValueFrom(
+                this.grpcService.requestSendAuthData(encriptData, metadata),
+            );
+
+            const data = this.AppHelper.decryptString(response.authresponse)
+
+            if (!NB.isEmpty(data)) {
+                return ErrorException(
+                    HttpStatus.BAD_REQUEST,
+                    'Missing response'
+                );
+            }
+
+            if (!data.status) {
+                return ErrorException(
+                    data.code || HttpStatus.BAD_REQUEST,
+                    data.message
+                );
+            }
+
+            return SuccessResponse(data.code, data.message, data.data);
+        }
+
+        // RETURN FAILURE RESPONSE
+        return ErrorException(HttpStatus.BAD_REQUEST, 'Missing data');
+    }
+
+    /**
+     * Responsible to send data to auth service to change the current password
+     * 
+     * @param user - Payload containing user details
+     * @param postData - Payload containing old password and new password
+     * @returns - Success or Failure response
+     */
+    async changePassword(user: any, postData: any) {
+
+        const { old_password, new_password } = postData;
+
+        if (NB.isEmpty(postData) && NB.isEmpty(user)) {
+
+            const dataStringify = {
+                old_password,
+                new_password,
+                user
+            };
+
+            const encriptData = {
+                authdata: [
+                    this.AppHelper.encryptString(JSON.stringify(dataStringify))
+                ],
+            };
+
+            // CREATE GRPC METADATA
+            const metadata: any = createGrpcMetadata();
+            metadata.set('operation', 'auth');
+            metadata.set('action', 'change-password');
+            metadata.set('service', 'nexbank-backend');
+
+            // SEND DATA TO AUTH MICROSERVICE
+            const response = await firstValueFrom(
+                this.grpcService.requestSendAuthData(encriptData, metadata),
+            );
+
+            const data = this.AppHelper.decryptString(response.authresponse)
+
+            if (!NB.isEmpty(data)) {
+                return ErrorException(
+                    HttpStatus.BAD_REQUEST,
+                    'Missing response'
+                );
+            }
+
+            if (!data.status) {
+                return ErrorException(
+                    data.code || HttpStatus.BAD_REQUEST,
+                    data.message
+                );
+            }
+
+            return SuccessResponse(data.code, data.message, data.data);
+        }
+
+        // RETURN FAILURE RESPONSE
+        return ErrorException(HttpStatus.BAD_REQUEST, 'Missing data');
+    }
 }
 
 // services/ auth account payment ledger notification fraud audit transaction

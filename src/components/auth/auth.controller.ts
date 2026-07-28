@@ -1,6 +1,6 @@
-import { Body, Controller, HttpStatus, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Post, Request, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshTokenDto, RegisterCompleteDto, RegisterInitiateDto, RegisterVerifyOtpDto } from './dto/auth.dto';
+import { ChangePasswordDto, LoginDto, RefreshTokenDto, RegisterCompleteDto, RegisterInitiateDto, RegisterVerifyOtpDto } from './dto/auth.dto';
 import { ErrorException } from 'src/app/exceptions/nb-responses.exception';
 import { Throttle } from '@nestjs/throttler';
 import { OtpThrottlerGuard } from 'src/app/guards/otp-throttler.guard';
@@ -140,6 +140,47 @@ export class AuthController {
                 error.message,
                 error.data
             );
+        }
+    }
+
+    /**
+     * Get current user from request
+     * 
+     * @param req - The user details to be logged out.
+     * @returns The response object containing the user data.
+     */
+    @Get("me")
+    @UseGuards(AuthGuard)
+    async getUser(@Request() req: any){
+        try {
+            return this.authService.getProfile(req.user);
+        } catch (error: any) {
+            return ErrorException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                error.message,
+                error.data
+            )
+        }
+    }
+
+    /**
+     * Change the current passowrd
+     * 
+     * @param req - The user details to be logged out.
+     * @param postData - Containing old password and new password
+     * @returns The response object cotains the success or failure message.
+     */
+    @Post("change-password")
+    @UseGuards(AuthGuard)
+    async changePassword(@Request() req: any, @Body() postData: ChangePasswordDto){
+        try {
+            return this.authService.changePassword(req.user, postData);
+        } catch (error: any) {
+            return ErrorException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                error.message,
+                error.data
+            )
         }
     }
 }
