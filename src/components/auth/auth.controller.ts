@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpStatus, Post, Request, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ChangePasswordDto, LoginDto, RefreshTokenDto, RegisterCompleteDto, RegisterInitiateDto, RegisterVerifyOtpDto } from './dto/auth.dto';
+import { ChangePasswordDto, ForgotPasswordDto, LoginDto, RefreshTokenDto, RegisterCompleteDto, RegisterInitiateDto, RegisterVerifyOtpDto } from './dto/auth.dto';
 import { ErrorException } from 'src/app/exceptions/nb-responses.exception';
 import { Throttle } from '@nestjs/throttler';
 import { OtpThrottlerGuard } from 'src/app/guards/otp-throttler.guard';
@@ -175,6 +175,25 @@ export class AuthController {
     async changePassword(@Request() req: any, @Body() postData: ChangePasswordDto){
         try {
             return this.authService.changePassword(req.user, postData);
+        } catch (error: any) {
+            return ErrorException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                error.message,
+                error.data
+            )
+        }
+    }
+
+    /**
+     * Forgot the current password
+     * 
+     * @param postData - Containing mobile number
+     * @returns The response object cotains the success or failure message.
+     */
+    @Post("forgot-password")
+    async forgotPassword(@Body() postData: ForgotPasswordDto){
+        try {
+            return this.authService.forgotPassword(postData);
         } catch (error: any) {
             return ErrorException(
                 HttpStatus.INTERNAL_SERVER_ERROR,

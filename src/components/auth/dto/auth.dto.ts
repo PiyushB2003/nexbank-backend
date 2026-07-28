@@ -91,3 +91,10 @@ export class ChangePasswordDto {
     @IsNotEmpty()
     new_password: string;
 }
+
+export class ForgotPasswordDto {
+
+    @IsPhoneNumber()
+    @IsNotEmpty()
+    mobile_number: string;
+}

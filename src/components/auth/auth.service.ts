@@ -489,6 +489,62 @@ export class AuthService implements OnModuleInit {
         // RETURN FAILURE RESPONSE
         return ErrorException(HttpStatus.BAD_REQUEST, 'Missing data');
     }
+
+    /**
+     * Responsible to send data to auth service to change the password because forgot the current
+     * 
+     * @param postData - Payload containing mobile number
+     * @returns - Success or Failure response
+     */
+    async forgotPassword(postData: any) {
+
+        const { mobile_number } = postData;
+
+        if (NB.isEmpty(postData)) {
+
+            const dataStringify = {
+                mobile_number
+            };
+
+            const encriptData = {
+                authdata: [
+                    this.AppHelper.encryptString(JSON.stringify(dataStringify))
+                ],
+            };
+
+            // CREATE GRPC METADATA
+            const metadata: any = createGrpcMetadata();
+            metadata.set('operation', 'auth');
+            metadata.set('action', 'forgot-password');
+            metadata.set('service', 'nexbank-backend');
+
+            // SEND DATA TO AUTH MICROSERVICE
+            const response = await firstValueFrom(
+                this.grpcService.requestSendAuthData(encriptData, metadata),
+            );
+
+            const data = this.AppHelper.decryptString(response.authresponse)
+
+            if (!NB.isEmpty(data)) {
+                return ErrorException(
+                    HttpStatus.BAD_REQUEST,
+                    'Missing response'
+                );
+            }
+
+            if (!data.status) {
+                return ErrorException(
+                    data.code || HttpStatus.BAD_REQUEST,
+                    data.message
+                );
+            }
+
+            return SuccessResponse(data.code, data.message, data.data);
+        }
+
+        // RETURN FAILURE RESPONSE
+        return ErrorException(HttpStatus.BAD_REQUEST, 'Missing data');
+    }
 }
 
 // services/ auth account payment ledger notification fraud audit transaction
