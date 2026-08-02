@@ -7,6 +7,7 @@ import { NB } from 'src/app/helpers/nb.helper';
 import { createGrpcMetadata } from 'src/grpc/grpc-metadata.helper';
 import { authMicroserviceOptions } from 'src/grpc/grpc-options';
 import { IAuthGrpcService } from 'src/grpc/grpc.interface';
+import { ForgotPasswordDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -496,7 +497,7 @@ export class AuthService implements OnModuleInit {
      * @param postData - Payload containing mobile number
      * @returns - Success or Failure response
      */
-    async forgotPassword(postData: any) {
+    async forgotPassword(postData: ForgotPasswordDto) {
 
         const { mobile_number } = postData;
 
@@ -516,6 +517,64 @@ export class AuthService implements OnModuleInit {
             const metadata: any = createGrpcMetadata();
             metadata.set('operation', 'auth');
             metadata.set('action', 'forgot-password');
+            metadata.set('service', 'nexbank-backend');
+
+            // SEND DATA TO AUTH MICROSERVICE
+            const response = await firstValueFrom(
+                this.grpcService.requestSendAuthData(encriptData, metadata),
+            );
+
+            const data = this.AppHelper.decryptString(response.authresponse)
+
+            if (!NB.isEmpty(data)) {
+                return ErrorException(
+                    HttpStatus.BAD_REQUEST,
+                    'Missing response'
+                );
+            }
+
+            if (!data.status) {
+                return ErrorException(
+                    data.code || HttpStatus.BAD_REQUEST,
+                    data.message
+                );
+            }
+
+            return SuccessResponse(data.code, data.message, data.data);
+        }
+
+        // RETURN FAILURE RESPONSE
+        return ErrorException(HttpStatus.BAD_REQUEST, 'Missing data');
+    }
+
+    /**
+     * Responsible to send data to auth service to reset the password
+     * 
+     * @param postData - Payload containing mobile number, otp and new password
+     * @returns - Success or Failure response
+     */
+    async resetPassword(postData: any) {
+
+        const { mobile_number, otp, new_password } = postData;
+
+        if (NB.isEmpty(postData)) {
+
+            const dataStringify = {
+                mobile_number,
+                otp,
+                new_password
+            };
+
+            const encriptData = {
+                authdata: [
+                    this.AppHelper.encryptString(JSON.stringify(dataStringify))
+                ],
+            };
+
+            // CREATE GRPC METADATA
+            const metadata: any = createGrpcMetadata();
+            metadata.set('operation', 'auth');
+            metadata.set('action', 'reset-password');
             metadata.set('service', 'nexbank-backend');
 
             // SEND DATA TO AUTH MICROSERVICE

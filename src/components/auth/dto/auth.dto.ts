@@ -98,3 +98,18 @@ export class ForgotPasswordDto {
     @IsNotEmpty()
     mobile_number: string;
 }
+
+export class ResetPasswordDto {
+
+    @IsPhoneNumber()
+    @IsNotEmpty()
+    mobile_number: string;
+
+    @IsString()
+    @IsNotEmpty()
+    otp: string;
+
+    @IsString()
+    @IsNotEmpty()
+    new_password: string;
+}
